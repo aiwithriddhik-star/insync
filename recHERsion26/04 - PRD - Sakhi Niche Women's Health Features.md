@@ -15,6 +15,38 @@ Related notes: [[01 - PS1 Healthcare - Pretrained Models]] · [[02 - PS1 Healthc
 
 ---
 
+## 0A. Team discussion update (24 Oct 2026)
+
+Source: Wispr Flow recording "Period Tracker Return-to-Work Planner", folder *Hackathon Dicussion*, 24 Oct 2026. The sections below were updated to match.
+
+### Decisions made
+
+| #  | Decision                                                                                                                                                                                        | Effect on this PRD                                                       |
+| -- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| D1 | **Healthcare (PS1)** is the chosen problem statement. Safety is parked.                                                                                                                   | PS1 stays. Safety is out of scope (§8).                                 |
+| D2 | **One combined app**, not several small tools. Small niche ideas are mixed into one product.                                                                                              | New unifying feature F9 (health passport).                               |
+| D3 | **Track only, no cycle prediction.** Prediction apps already exist.                                                                                                                       | F1 revised: prediction range removed.                                    |
+| D4 | **The app never diagnoses.** It says "might / may" and shows a chance, never a certainty.                                                                                                 | Already in §5. Wording rule extended to F12.                            |
+| D5 | **Hindi and multilingual support is a must. Processing stays local.**                                                                                                                     | F5 and F7 reinforced. Open question on hosted LLM resolved toward local. |
+| D6 | **Front end must look good and implementation must be maximal** (submission deadline 9 PM).                                                                                               | Build order in §7 unchanged. P1 features ship as far as time allows.    |
+| D7 | The **return-to-work planner** (after childbirth) is dropped as too small.                                                                                                                | Added to out of scope (§8).                                             |
+| D8 | **Women's safety** (IoT, cyber safety, digital dowry research paper) is not feasible in one day. It may become a later AI project, for example **Hack CBS on 31 Oct (AIML topic)**. | Out of scope (§8).                                                      |
+
+### New or changed features raised in the discussion
+
+| ID  | Feature                                                                                                                      | Status in this PRD               | Note                                                                             |
+| --- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------- |
+| F9  | **Health passport**: one timeline joining cycle, symptoms, pain and daily-life impact, reports, treatment and expenses | **New, P0**                | The foundation. It extends F6 and feeds F10 to F12.                              |
+| F10 | **Report explainer and doctor-visit companion**: upload lab reports, get a plain-language summary and questions to ask | **New, P1**                | The team called this decided. Promote to P0 if time allows (see open questions). |
+| F11 | **Budget and product planner**: track product and care costs, plan monthly spend from the user's own cycle             | **New, P1**                | The team called this decided.                                                    |
+| F12 | **Guided triage flow and per-condition dashboards** (PCOS, anemia, endometriosis)                                      | **New, P0**                | Replaces "pick a condition first". The flow starts from symptoms.                |
+| F8  | **Nearest government hospital on a map**                                                                               | **Promoted from P2 to P1** | Needs only the user's location plus a static list. No admissions.                |
+| F1  | Cycle tracker                                                                                                                | **Revised**                | Tracking and patterns only. No prediction (D3).                                  |
+| F13 | **Office period-leave validation**                                                                                     | **Parked (tentative)**     | The team put a question mark on it. See §4, F13.                                |
+| –  | Subscription box for PCOS products                                                                                           | **Parked**                 | Discussed, with no clear business model. Not in scope.                           |
+
+---
+
 ## 0. Rulebook compliance
 
 The feature set has been checked against [[00 - Rulebook & Problem Statements]]. ✅ = complies by design. ⚠️ = complies only if the team takes the stated action.
@@ -114,10 +146,11 @@ flowchart LR
 
 ### F1. Personal cycle tracker that doesn't assume 28 days (P0)
 
-- **Story:** As Priya, I want predictions based on *my own* cycles so that I stop getting wrong dates and I learn whether my cycles are irregular.
-- **How:** Log period start and end, flow and symptoms. Predict the next cycle as a **range** using a rolling personal model (mean ± SD of her last cycles), written by us during the build window. FedCycleData gives the population prior for new users. Femora is **inspiration only**: no code is copied or forked from it (rulebook: forking = plagiarism).
+- **Story:** As Priya, I want my own cycles tracked and explained so that I learn whether they are irregular and how they are changing. *(Revised after the team discussion: Sakhi tracks and finds patterns. It does not predict the next period.)*
+- **How:** Log period start and end, flow and symptoms. Show her own cycle lengths, their mean and spread, and how they are changing (**no next-period prediction**, per decision D3; prediction apps already exist). Also log pain, mood and impact on daily life. Logic is written by us during the build window. FedCycleData gives the population reference range for new users. Femora is **inspiration only**: no code is copied or forked from it (rulebook: forking = plagiarism).
 - **Acceptance criteria:**
-  - [ ] After 3 or more logged cycles, the prediction shows a range (for example, "Nov 2–7"), not a single day
+  - [ ] After 3 or more logged cycles, her cycle-length range and trend are shown (for example, "32–41 days, getting longer"). No predicted date is shown.
+  - [ ] Pain, mood and daily-life impact can be logged per cycle and appear on the F9 timeline
   - [ ] Cycles outside 21–35 days, or varying by more than 7–9 days, trigger an "irregular" flag with a plain-language explanation
   - [ ] Works fully offline
 
@@ -170,9 +203,55 @@ flowchart LR
 - One-tap "delete everything". There is no third-party analytics SDK.
 - Only the RAG/LLM query text leaves the device, and only when she chooses to ask. A note explains this.
 
-### F8. Find care nearby (P2)
+### F8. Find care nearby (P1, promoted from P2)
 
-- Directions to the nearest government hospital with a gynaecology department, plus a list of Jan Aushadhi stores for affordable medicines. Uses a static list for the demo.
+- **How:** Show the nearest government hospital with a gynaecology department on a map, using her current location and a static list of hospitals. Sakhi only recommends and shows the location. It does not handle admission. Jan Aushadhi stores (affordable medicines) are optional: the team was unsure what they are, so verify before including.
+- **Acceptance criteria:**
+  - [ ] With location allowed, the 3 nearest listed hospitals show on a map
+  - [ ] Location is used on the device only and is never stored
+
+### F9. Health passport: one personal health timeline (P0, new)
+
+- **Story:** As Priya, I want one record that brings together my cycles, symptoms, reports, treatment and expenses, so that I can see how my health is changing and show it to a doctor.
+- **How:** One timeline instead of separate trackers. For example, "your pelvic pain has become more disruptive over three cycles". Past reports can be added to it. F2, F3, F10, F11 and F12 all read from it and write back to it. F6 (doctor report) is generated from it.
+- **Acceptance criteria:**
+  - [ ] Cycles, symptoms, pain and impact, uploaded reports, screening results and expenses all appear on one timeline
+  - [ ] A trend statement (for example, pain worsening over 3 cycles) is shown from logged data
+  - [ ] The doctor report (F6) is built from the passport, not from separate data
+
+### F10. Report explainer and doctor-visit companion (P1, new)
+
+- **Story:** As Meena, I want to understand my lab report in plain Hindi and know what to ask my doctor.
+- **How:** She uploads or types report values (CBC, hormone panel and similar). Sakhi explains each value in plain language, marks values outside the reference range, and suggests questions for the next visit. It uses the same local model and RAG sources as F4. The result is saved to the passport (F9).
+- **Guardrail:** It explains and flags only. It never interprets a report as a diagnosis.
+- **Acceptance criteria:**
+  - [ ] An uploaded or typed report gives a plain-language summary plus a list of questions for the doctor
+  - [ ] Out-of-range values are flagged with the reference range shown
+  - [ ] The summary is added to the passport and to the F6 report
+
+### F11. Budget and product planner (P1, new)
+
+- **Story:** As Priya, I want to plan what my periods and care cost each month so that expenses don't surprise me.
+- **How:** Track spend on products (pads, tampons, medicines) and care (tests, consultations). Planning is based on her own logged cycle pattern, not on a predicted date. Expenses appear on the passport (F9). Period-leave pay loss can be recorded as an expense.
+- **Acceptance criteria:**
+  - [ ] Expenses can be added and are totalled by month and category
+  - [ ] A simple monthly budget view shows planned vs actual spend
+
+### F12. Guided triage flow and condition dashboards (P0, new)
+
+- **Story:** As Priya, I don't know what I have. I want to describe what I feel and be shown what it might be, then be taken to the right place.
+- **How:** (1) A chatbot asks about her problems in her own words, by voice or text, in Hindi or English. (2) Sakhi lists *possible* conditions using "might" and "may" wording, with a chance level and reasons, never a certainty. (3) She is sent to a dashboard for that condition: **PCOS** (F2), **anemia** (F3) or **endometriosis**. (4) Results loop back into the passport (F9) with what actions to take, what to focus on, and what to ask the doctor.
+- **Endometriosis dashboard:** The vault has no endometriosis model or dataset, so this is a **symptom-documentation dashboard** (pain outside periods, fatigue, bowel symptoms, impact on daily life) that builds a clinic-ready timeline. It states that diagnosis is often delayed in India and gives a "see a doctor" prompt. No trained model.
+- **Acceptance criteria:**
+  - [ ] A free-text or voice description leads to a list of possible conditions in "might / may" wording
+  - [ ] No screen says "you have" or "diagnosis"
+  - [ ] Each condition opens its own dashboard, and results are written to the passport
+
+### F13. Office period-leave validation (Parked, tentative)
+
+- **Idea raised:** Help people with severe period pain confirm that they need leave, so that offices can validate it.
+- **Why parked:** The team marked it with a question mark. Each office has a different policy and the feature belongs in the office's own portal, so connecting to one by API is hard in this timeline. It also conflicts with F7: sharing health data with an employer breaks the privacy promise.
+- **If revisited later:** The user generates a short leave-support letter from her own passport and decides what to share. There is no employer integration. Not part of the MVP.
 
 ### Priority summary
 
@@ -186,6 +265,28 @@ flowchart LR
 | F3 Anemia check           | P1       | CBC dataset                      | Impact (NFHS-5)                 |
 | F5 Hindi voice diary      | P1       | IndicConformer, IndicTrans2, NER | Accessibility, Innovation       |
 | F8 Find care              | P2       | Static list                      | Impact                          |
+
+---
+
+### Updated priority summary (24 Oct discussion; supersedes the table above where they differ)
+
+| Feature                                                 | Priority | Change                                                                         |
+| ------------------------------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| F1 Cycle tracker (tracking, no prediction)              | P0       | Revised: prediction removed                                                    |
+| F2 PCOS screener + SHAP                                 | P0       | No change                                                                      |
+| F4 Ask Sakhi (RAG)                                      | P0       | No change                                                                      |
+| F6 Doctor report                                        | P0       | Now generated from F9                                                          |
+| F7 Privacy                                              | P0       | Local processing confirmed (D5)                                                |
+| **F9 Health passport**                            | P0       | **New**                                                                  |
+| **F12 Guided triage flow + condition dashboards** | P0       | **New**                                                                  |
+| F3 Anemia check                                         | P1       | No change (dashboard under F12)                                                |
+| F5 Hindi voice diary                                    | P1       | Hindi is a must (D5). Consider moving to P0 if the voice pipeline works early. |
+| **F10 Report explainer**                          | P1       | **New**                                                                  |
+| **F11 Budget and product planner**                | P1       | **New**                                                                  |
+| F8 Find care nearby                                     | P1       | Promoted from P2                                                               |
+| F13 Office period-leave validation                      | Parked   | Tentative                                                                      |
+
+**Updated flow:** Describe problem (F12) → possible conditions → condition dashboard (F2, F3, endometriosis) → passport (F9) ← logs (F1, F5), reports (F10), expenses (F11) → Ask Sakhi (F4), find care (F8), doctor report (F6).
 
 ---
 
@@ -274,10 +375,16 @@ timeline
 - [ ] Do the Kottarathil PCOS, FedCycleData and CBC anemia datasets have a licence on Kaggle that permits use?
 - [ ] Has MedGemma access been granted? If not, use Apollo-7B or a hosted API.
 - [ ] Is the product name final: Sakhi or something else?
+- [ ] **(New)** Promote F10 (report explainer) and F11 (budget planner) from P1 to P0? The team called both "decided", but that adds a lot to a 30-hour build.
+- [ ] **(New)** The recording shows the PRD's cycle prediction range being read out and accepted, and the final decision was "tracking only". This PRD follows the final decision (D3). Confirm.
+- [ ] **(New)** Team said "PCOS has been renamed (PMOS?)", from an Instagram post. Verify before using any new name on a slide.
+- [ ] **(New)** Which endometriosis content source will back the dashboard (no dataset in the vault)?
+- [ ] **(New)** Who owns what? The recording says one member builds the diagnosis and analysis part (PCOS model, trained on a teammate-owned GPU) and another builds the tracker and fills the PS1 form. Confirm the split for F9 to F12.
+- [ ] **(New)** Local processing (D5) vs MedGemma gating and GPU limits: which model runs locally for the demo? This replaces the earlier hosted-vs-device question.
 - [ ] Should the MVP include the PCOS lab tier, or only the symptom-only tier?
 - [ ] Should LLM inference be hosted (simpler) or on the device (more private)?
 - [ ] Should anemia (P1) move to P0 because of its impact story (NFHS-5: 57%)?
 
 ### Out of scope (MVP)
 
-Pregnancy tracking, fertility and conception advice, medical imaging (mammogram, cervical, ultrasound), telemedicine booking, payments, and any diagnosis or prescription.
+Cycle prediction, return-to-work planner after childbirth, women's safety (IoT, cyber safety, digital dowry; possible later project for Hack CBS on 31 Oct), PCOS subscription box, employer or office portal integration, pregnancy tracking, fertility and conception advice, medical imaging (mammogram, cervical, ultrasound), telemedicine booking, payments, and any diagnosis or prescription.
