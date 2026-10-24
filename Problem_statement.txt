@@ -1,0 +1,18 @@
+recHERsion’26
+
+
+Problem Statements
+
+PS1: Women’s Healthcare
+
+Design and build a digital solution that addresses challenges in women’s healthcare, such as gaps in
+diagnosis, symptom tracking, health awareness, or access to meaningful clinical insights. Develop an
+innovative solution that empowers women to better understand and manage their health.
+
+PS2: Women’s Safety
+
+Women face a range of safety challenges in both physical and digital environments, from harassment
+and unsafe situations to privacy breaches, online threats, and identity misuse. Design and build an
+innovative solution that addresses these challenges and enables women to protect themselves, seek
+assistance, or prevent potential harm in ways that are effective, practical, and sensitive to their safety
+and privacy.
