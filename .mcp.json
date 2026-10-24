@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@bitbonsai/mcpvault@latest",
+        "/Users/saliltrehan/Documents/Python_n_R/Personal/research_womens_safety"
+      ]
+    },
+    "wispr-flow": {
+        "type": "http",
+      "url": "https://api.wisprflow.ai/connect/mcp"
+    }    
+    }
+}
