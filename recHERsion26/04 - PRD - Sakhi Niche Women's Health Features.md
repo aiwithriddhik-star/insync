@@ -32,6 +32,23 @@ Source: Wispr Flow recording "Period Tracker Return-to-Work Planner", folder *Ha
 | D7 | The **return-to-work planner** (after childbirth) is dropped as too small.                                                                                                                | Added to out of scope (§8).                                             |
 | D8 | **Women's safety** (IoT, cyber safety, digital dowry research paper) is not feasible in one day. It may become a later AI project, for example **Hack CBS on 31 Oct (AIML topic)**. | Out of scope (§8).                                                      |
 
+### Resolved open questions (24 Oct, team lead answers)
+
+| #   | Decision                                                                                                                                                                         | Effect on this PRD                                                                                                  |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| D3  | **Locked: tracking only, no prediction.**                                                                                                                                        | F1 stays as revised.                                                                                                |
+| D9  | **F10 report explainer moves to P0. F11 budget planner stays P1.**                                                                                                               | F10 is P0. Build order gets one more P0 item.                                                                       |
+| D10 | **F3 anemia moves to P0, with the CBC classifier.**                                                                                                                              | Kaggle CBC licence must be confirmed before 3 PM Sat. Fallback: WHO Hb 12 g/dL rules and no model (see Risks).       |
+| D11 | **LLM inference uses a hosted API, not local.** This is an exception to D5 ("processing stays local").                                                                           | Only the question text leaves the device, and only when she asks. Disclose in the README, the PPT and an in-app note. Screeners, logs and the passport stay on the device. |
+| D12 | **PCOS: symptom-only tier in the MVP.** The lab tier (AMH, LH/FSH, follicle count) moves to v1.                                                                                  | F2 ships one tier.                                                                                                  |
+| D13 | **Ownership follows the recording.** The diagnosis and analysis builder owns F2, F3 and the F12 triage. The tracker and form owner owns F1, F9, F6 and F7. F4 and F10 are shared. | Names to be added by the team.                                                                                      |
+| D14 | **The product name stays Sakhi.**                                                                                                                                                | None.                                                                                                               |
+| D16 | **Data and model access confirmed.** All three Kaggle datasets and MedGemma are available.                                                                                       | F3 keeps the CBC classifier, so the WHO-rules fallback is not needed. Licence names still go in the credits.        |
+| D15 | **Endometriosis source: option B, a symptom checklist built from published studies. No model.**                                                                                  | F12 endometriosis dashboard uses the checklist. Ziwig model moves to the roadmap.                                   |
+
+> [!warning] D11 conflicts with earlier wording
+> F7, §5 (Privacy) and F10 still say "local model". Under D11, read these as "local data, hosted LLM query". The privacy claim must say exactly that and never "everything stays on your device".
+
 ### New or changed features raised in the discussion
 
 | ID  | Feature                                                                                                                      | Status in this PRD               | Note                                                                             |
@@ -164,7 +181,7 @@ flowchart LR
   - [ ] Every result shows its reasons and a disclaimer saying it is not a diagnosis
   - [ ] A High result always gives "See a gynaecologist" plus what tests to ask for
 
-### F3. Anemia check (P1)
+### F3. Anemia check (P0, promoted from P1)
 
 - **Story:** As Meena, I want to know whether my tiredness and heavy periods could mean anemia.
 - **How:** (a) A symptom questionnaire (fatigue, heavy flow, breathlessness, pale skin) gives a risk level. (b) An optional CBC entry (Hb, MCH, MCHC, MCV) runs a classifier trained on the Kaggle CBC dataset.
@@ -219,7 +236,7 @@ flowchart LR
   - [ ] A trend statement (for example, pain worsening over 3 cycles) is shown from logged data
   - [ ] The doctor report (F6) is built from the passport, not from separate data
 
-### F10. Report explainer and doctor-visit companion (P1, new)
+### F10. Report explainer and doctor-visit companion (P0, new)
 
 - **Story:** As Meena, I want to understand my lab report in plain Hindi and know what to ask my doctor.
 - **How:** She uploads or types report values (CBC, hormone panel and similar). Sakhi explains each value in plain language, marks values outside the reference range, and suggests questions for the next visit. It uses the same local model and RAG sources as F4. The result is saved to the passport (F9).
@@ -241,7 +258,8 @@ flowchart LR
 
 - **Story:** As Priya, I don't know what I have. I want to describe what I feel and be shown what it might be, then be taken to the right place.
 - **How:** (1) A chatbot asks about her problems in her own words, by voice or text, in Hindi or English. (2) Sakhi lists *possible* conditions using "might" and "may" wording, with a chance level and reasons, never a certainty. (3) She is sent to a dashboard for that condition: **PCOS** (F2), **anemia** (F3) or **endometriosis**. (4) Results loop back into the passport (F9) with what actions to take, what to focus on, and what to ask the doctor.
-- **Endometriosis dashboard:** The vault has no endometriosis model or dataset, so this is a **symptom-documentation dashboard** (pain outside periods, fatigue, bowel symptoms, impact on daily life) that builds a clinic-ready timeline. It states that diagnosis is often delayed in India and gives a "see a doctor" prompt. No trained model.
+- **Endometriosis dashboard (D15, option B):** A **symptom checklist** with no trained model, based on published studies such as the [2023 self-report symptom study](https://www.nature.com/articles/s41598-023-32761-8) and the [Chapron questionnaire](https://www.researchgate.net/publication/357707733_A_new_validated_screening_method_for_endometriosis_diagnosis_based_on_patient_questionnaires). It covers pain outside periods, painful sex, bowel and bladder symptoms, fatigue and impact on daily life. The count of matching symptoms gives a Low, Moderate or High "pattern" level in "might / may" wording (for example, "your symptoms may fit a pattern worth discussing with a doctor"). Results go onto the passport (F9) and the doctor report (F6). It states that diagnosis is often delayed in India and always ends with a "see a doctor" prompt.
+  - **Limits to disclose:** The source studies are Western and mostly surgical cohorts, and no India-specific validated tool was found. The checklist is not validated on Indian women. State this in the app, README and PPT. Cite the studies and do not copy their questionnaire wording.
 - **Acceptance criteria:**
   - [ ] A free-text or voice description leads to a list of possible conditions in "might / may" wording
   - [ ] No screen says "you have" or "diagnosis"
@@ -279,9 +297,9 @@ flowchart LR
 | F7 Privacy                                              | P0       | Local processing confirmed (D5)                                                |
 | **F9 Health passport**                            | P0       | **New**                                                                  |
 | **F12 Guided triage flow + condition dashboards** | P0       | **New**                                                                  |
-| F3 Anemia check                                         | P1       | No change (dashboard under F12)                                                |
+| F3 Anemia check                                         | P0       | **Promoted from P1 (D10).** Includes CBC classifier.                           |
 | F5 Hindi voice diary                                    | P1       | Hindi is a must (D5). Consider moving to P0 if the voice pipeline works early. |
-| **F10 Report explainer**                          | P1       | **New**                                                                  |
+| **F10 Report explainer**                          | P0       | **New. Promoted to P0 (D9).**                                            |
 | **F11 Budget and product planner**                | P1       | **New**                                                                  |
 | F8 Find care nearby                                     | P1       | Promoted from P2                                                               |
 | F13 Office period-leave validation                      | Parked   | Tentative                                                                      |
@@ -348,7 +366,8 @@ timeline
 5. Doctor PDF report (about 3 h)
 6. Privacy layer: PIN lock and local encryption (about 3 h)
 7. **P0 gate:** the whole flow (log → flag → explain → ask → report) works end to end. Stretch work starts only after this.
-8. Stretch: anemia check, then Hindi voice
+7a. *(Added by D9 and D10.)* Anemia check with the CBC classifier (F3) and report explainer (F10) are now P0. Build them before the P0 gate and move the gate check after them.
+8. Stretch: Hindi voice, budget planner (F11), find care (F8)
 9. Demo video, PPT (with credits slide) and README (last 3 h)
 10. **Final commit and repo freeze by 8:30 PM Sun.** Any commit after 9:00 PM disqualifies the team, even a typo fix. Submit by 9:00 PM; there is no grace period.
 
@@ -372,18 +391,30 @@ timeline
 
 ### Open questions
 
-- [ ] Do the Kottarathil PCOS, FedCycleData and CBC anemia datasets have a licence on Kaggle that permits use?
-- [ ] Has MedGemma access been granted? If not, use Apollo-7B or a hosted API.
+- [x] **(Resolved, D16)** The team has access to all three Kaggle datasets (Kottarathil PCOS, FedCycleData, CBC anemia). Still copy each licence name into the README credits and the PPT credits slide.
+- [x] **(Resolved, D16)** MedGemma access is granted. Apollo-7B stays as the backup only. Read the HAI-DEF terms once for the hosted-API setup (D11).
 - [ ] Is the product name final: Sakhi or something else?
-- [ ] **(New)** Promote F10 (report explainer) and F11 (budget planner) from P1 to P0? The team called both "decided", but that adds a lot to a 30-hour build.
-- [ ] **(New)** The recording shows the PRD's cycle prediction range being read out and accepted, and the final decision was "tracking only". This PRD follows the final decision (D3). Confirm.
+- [x] **(Resolved, D9)** F10 moves to P0. F11 stays P1.
+- [x] **(Resolved, D3)** Tracking only, no prediction.
 - [ ] **(New)** Team said "PCOS has been renamed (PMOS?)", from an Instagram post. Verify before using any new name on a slide.
-- [ ] **(New)** Which endometriosis content source will back the dashboard (no dataset in the vault)?
-- [ ] **(New)** Who owns what? The recording says one member builds the diagnosis and analysis part (PCOS model, trained on a teammate-owned GPU) and another builds the tracker and fills the PS1 form. Confirm the split for F9 to F12.
-- [ ] **(New)** Local processing (D5) vs MedGemma gating and GPU limits: which model runs locally for the demo? This replaces the earlier hosted-vs-device question.
-- [ ] Should the MVP include the PCOS lab tier, or only the symptom-only tier?
-- [ ] Should LLM inference be hosted (simpler) or on the device (more private)?
-- [ ] Should anemia (P1) move to P0 because of its impact story (NFHS-5: 57%)?
+- [x] **(Resolved, D15: option B)** Endometriosis dashboard uses a symptom checklist. Options from the 24 Oct research, kept for reference: (a) cited NHS, MedlinePlus and WHO text through the F4 RAG, (b) a symptom checklist modelled on the open-access [self-report symptom study (Sci Rep 2023)](https://www.nature.com/articles/s41598-023-32761-8) and the [Chapron questionnaire](https://www.researchgate.net/publication/357707733_A_new_validated_screening_method_for_endometriosis_diagnosis_based_on_patient_questionnaires), (c) a trained model on the Ziwig dataset. See "Endometriosis source options" below.
+- [x] **(Resolved, D13)** Ownership follows the recording. Team to add names.
+- [x] **(Resolved, D11)** Hosted LLM API. Disclose the exception to D5.
+- [x] **(Resolved, D12)** PCOS symptom-only tier for the MVP. Lab tier moves to v1.
+- [x] **(Resolved, D11)** Hosted LLM inference.
+- [x] **(Resolved, D10)** Anemia moves to P0 with the CBC classifier.
+- [x] **(Resolved, D14)** Name stays Sakhi.
+- [ ] **(Owner: team, before 3 PM Sat)** Verify the PCOS rename ("PMOS?") before using any new name on a slide.
+
+### Endometriosis source options (research, 24 Oct)
+
+| Option | What it is | Fit for a one-day build | Concerns |
+| ------ | ---------- | ----------------------- | -------- |
+| (a) Cited text via the F4 RAG | [WHO fact sheet](https://www.who.int/news-room/fact-sheets/detail/endometriosis), [MedlinePlus](https://medlineplus.gov/endometriosis.html), [NHS Inform](https://www.nhsinform.scot/healthy-living/womens-health/girls-and-young-women-puberty-to-around-25/periods-and-menstrual-health/endometriosis/) | Easiest. Reuses the F4 pipeline and the existing sources. | WHO content is usually [CC BY-NC-SA 3.0 IGO](https://www.who.int/about/policies/publishing/copyright) (non-commercial, share-alike). Credit it and summarise rather than copy. Confirm the licence of each page. |
+| (b) Symptom checklist | A fixed list of symptoms (pain outside periods, painful sex, bowel and bladder symptoms, fatigue) based on published studies. The [2023 self-report study](https://www.nature.com/articles/s41598-023-32761-8) names 24 predictive symptoms. | Moderate. A simple scored checklist with "might / may" wording, with no trained model. | Studies are Western and mostly surgical cohorts. No India-specific validated tool was found. Do not present a score as a result. Use it to structure the timeline and the doctor report only. |
+| (c) Trained model | [Ziwig open data](https://www.nature.com/articles/s41598-021-04637-2): 8,000 records, 500 features, French origin. | Hardest. Needs data access, cleaning and validation. | Not Indian data. Would add a second trained model to a build with a tight P0 list. Not recommended for the MVP. |
+
+**Decision (D15):** option (b). Skip (c) for the MVP and list a trained endometriosis model (Ziwig or Indian data) on the v2 roadmap. Cited education text from the F4 RAG can still back the "Ask Sakhi" answers on endometriosis, but it is not part of the dashboard.
 
 ### Out of scope (MVP)
 
