@@ -1,0 +1,23 @@
+{
+  "target": "PCOS (Y/N)",
+  "numeric": [
+    "Follicle No. (R)",
+    "Follicle No. (L)",
+    "Cycle length(days)",
+    "AMH(ng/mL)",
+    "BMI",
+    "Weight (Kg)",
+    "Age (yrs)",
+    "Waist(inch)",
+    "Hip(inch)"
+  ],
+  "categorical": [
+    "Skin darkening (Y/N)",
+    "hair growth(Y/N)",
+    "Weight gain(Y/N)",
+    "Cycle(R/I)",
+    "Fast food (Y/N)",
+    "Pimples(Y/N)",
+    "Hair loss(Y/N)"
+  ]
+}

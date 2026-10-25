@@ -1,0 +1,22 @@
+feature,folds_selected_of_15,in_original_shortlist
+Weight (Kg),15,True
+BMI,15,True
+Cycle length(days),15,True
+Waist(inch),15,True
+AMH(ng/mL),15,True
+Follicle No. (L),15,True
+Follicle No. (R),15,True
+Cycle(R/I),15,True
+Weight gain(Y/N),15,True
+hair growth(Y/N),15,True
+Skin darkening (Y/N),15,True
+Pimples(Y/N),15,True
+Fast food (Y/N),15,True
+Hip(inch),14,True
+Hair loss(Y/N),13,True
+Age (yrs),11,True
+Avg. F size (L) (mm),5,False
+Endometrium (mm),4,False
+Marraige Status (Yrs),2,False
+Avg. F size (R) (mm),1,False
+Pulse rate(bpm),1,False
