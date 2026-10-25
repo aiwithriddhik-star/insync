@@ -43,7 +43,7 @@ for col in ['Unnamed: 44', 'Sl. No', "Patient File No."]:
 
 # Preprocessing
 
-cat_cols = ['PCOS (Y/N)', "Blood Group", "Pregnant(Y/N)", "Weight gain(Y/N)", "hair growth(Y/N)", "Skin darkening (Y/N)", "Hair loss(Y/N)", "Pimples(Y/N)", "Fast food (Y/N)", "Reg.Exercise(Y/N)"]
+cat_cols = ['PCOS (Y/N)', "Cycle(R/I)", "Blood Group", "Pregnant(Y/N)", "Weight gain(Y/N)", "hair growth(Y/N)", "Skin darkening (Y/N)", "Hair loss(Y/N)", "Pimples(Y/N)", "Fast food (Y/N)", "Reg.Exercise(Y/N)"]
 
 for i in cat_cols:
     if i in df.columns:
@@ -51,7 +51,7 @@ for i in cat_cols:
 
 df['II    beta-HCG(mIU/mL)'] = pd.to_numeric(df['II    beta-HCG(mIU/mL)'], errors='coerce')
 
-df['BMI'] = df['Height(Cm)']/df['Weight (Kg)']
+df['BMI'] = df['Weight (Kg)']/((df['Height(Cm)']/100)**2)
 df['FSH/LH'] = df['FSH(mIU/mL)']/df['LH(mIU/mL)']
 df['Waist:Hip Ratio'] = df['Waist(inch)']/df['Hip(inch)']
 df['AMH(ng/mL)'] = pd.to_numeric(df['AMH(ng/mL)'], errors='coerce')

@@ -1,2 +1,14 @@
 .serena/
 .obsidian/
+# Local runtime data
+backend/chroma_db/
+backend/uploads/
+
+# Secrets
+.env
+
+# Python bytecode
+__pycache__/
+
+# macOS
+.DS_Store
