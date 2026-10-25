@@ -91,7 +91,7 @@ export function HomePage({ navigate }: { navigate: Navigate }) {
     </section>
 
     <section className="education" id="learn">
-      <div><span className="eyebrow">LEARN AT YOUR PACE</span><h2>Knowledge makes a difference.</h2><p>Explore the science behind your cycle and discover practical ways to care for yourself.</p><div className="seal">Learn.<br />Understand.<br />Empower.</div><Button onClick={() => navigate('info')}>Explore Resources <Arrow /></Button></div>
+      <div><span className="eyebrow">LEARN AT YOUR PACE</span><h2>Knowledge makes a difference.</h2><p>Explore the science behind your cycle and discover practical ways to care for yourself.</p><div className="seal">Learn.<br />Understand.<br />Empower.</div><Button onClick={() => navigate('info')}>Explore Resources <Arrow /></Button> <Button kind="outline" onClick={() => navigate('chat')}>Ask InSync a Question</Button></div>
       <div className="edu-cards"><article><img src={img.group} alt="Women connecting in a natural setting" /><span>Cycle Basics</span><h3>Understanding Your Cycle</h3><p>Learn about menstrual phases, hormones, and common cycle variations.</p></article><article><img src={img.calm} alt="Woman in a calm reflective moment" /><span>Symptom Guide</span><h3>Making Sense of Symptoms</h3><p>Explore cramps, flow changes, mood, and other menstrual symptoms.</p></article></div>
     </section>
 

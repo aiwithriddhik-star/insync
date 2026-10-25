@@ -8,6 +8,7 @@ const links: { label: string; page: Page }[] = [
   { label: 'My Cycle', page: 'analysis' },
   { label: 'Care Budget', page: 'care-budget' },
   { label: 'Report Simplifier', page: 'lab-report' },
+  { label: 'Ask InSync', page: 'chat' },
   { label: 'Learn More', page: 'info' },
 ];
 

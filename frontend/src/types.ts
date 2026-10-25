@@ -32,9 +32,10 @@ export type Page =
   | 'info'
   | 'insights'
   | 'care-budget'
-  | 'lab-report';
+  | 'lab-report'
+  | 'chat';
 
-export const PAGE_IDS: Page[] = ['home', 'analysis', 'profile', 'concerns', 'pcos', 'endometriosis', 'dysmenorrhea', 'heavy-bleeding', 'irregular', 'info', 'insights', 'care-budget', 'lab-report'];
+export const PAGE_IDS: Page[] = ['home', 'analysis', 'profile', 'concerns', 'pcos', 'endometriosis', 'dysmenorrhea', 'heavy-bleeding', 'irregular', 'info', 'insights', 'care-budget', 'lab-report', 'chat'];
 
 export type ConcernKind = 'endometriosis' | 'dysmenorrhea' | 'heavy-bleeding' | 'irregular';
 

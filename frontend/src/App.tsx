@@ -5,6 +5,7 @@ import { Nav } from './components/Nav';
 import { ProfileSetup } from './components/ProfileSetup';
 import { AnalyseCyclePage, CycleInsightsPage } from './pages/AnalyseCyclePage';
 import { BeyondCalendarPage, ConcernDetailPage } from './pages/BeyondCalendarPage';
+import { ChatPage } from './pages/ChatPage';
 import { CareBudgetPage } from './pages/CareBudgetPage';
 import { HomePage } from './pages/HomePage';
 import { LearnPage } from './pages/LearnPage';
@@ -67,6 +68,9 @@ export default function App() {
       break;
     case 'care-budget':
       content = <CareBudgetPage onBack={() => navigate('home')} />;
+      break;
+    case 'chat':
+      content = <ChatPage onBack={() => navigate('home')} />;
       break;
     case 'lab-report':
       content = <ReportPage onBack={() => navigate('home')} />;
