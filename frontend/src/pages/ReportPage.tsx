@@ -1,9 +1,15 @@
 import { useRef, useState } from 'react';
+import { explainReport, type ReportExplanation } from '../api/insync';
 import { Button } from '../components/Button';
+import { ChatPanel } from '../components/ChatPanel';
+import { RichText } from '../components/RichText';
 import { formatDate } from '../utils/dates';
 
 type SelectedReport = { kind: 'user' | 'sample'; name: string; type: string; size: number };
-type ReportHistory = { id: number; title: string; category: string; date: string };
+type ReportHistory = { id: number; title: string; category: string; date: string; kind: 'sample' | 'user'; result?: ReportExplanation; fileName?: string; fileType?: string; fileSize?: number };
+type ViewTest = { name: string; result: string; unit: string; range: string; status: string; tone: string; meaning: string; measures?: string; ordered?: string; factors?: string; limits?: string };
+type ViewTerm = { term: string; explanation: string; context?: string };
+const statusLabels: Record<string, string> = { below: 'Below provided range', within: 'Within provided range', above: 'Above provided range', unknown: 'Range not provided' };
 
 const categories = ['Complete Blood Count (CBC)', 'Thyroid Function', 'Hormone Tests', 'Blood Glucose', 'Vitamin and Nutrient Tests', 'Other'];
 const maxFileSize = 10 * 1024 * 1024;
@@ -38,7 +44,12 @@ export function ReportPage({ onBack }: { onBack: () => void }) {
   const [dragging, setDragging] = useState(false);
   const [fileError, setFileError] = useState('');
   const [details, setDetails] = useState({ title: '', category: '', date: '' });
-  const [analysis, setAnalysis] = useState<'none' | 'demo' | 'unavailable'>('none');
+  const [file, setFile] = useState<File | null>(null);
+  const [analysis, setAnalysis] = useState<'none' | 'demo' | 'user'>('none');
+  const [loading, setLoading] = useState(false);
+  const [reportError, setReportError] = useState('');
+  const [result, setResult] = useState<ReportExplanation | null>(null);
+  const abortRef = useRef<AbortController | undefined>(undefined);
   const [history, setHistory] = useState<ReportHistory[]>([]);
   const [questions, setQuestions] = useState(initialQuestions);
   const [newQuestion, setNewQuestion] = useState('');
@@ -56,12 +67,20 @@ export function ReportPage({ onBack }: { onBack: () => void }) {
       setFileError('This file is larger than 10 MB. Choose a smaller file.');
       return;
     }
+    setFile(file);
+    setResult(null);
+    setReportError('');
     setSelected({ kind: 'user', name: file.name, type: extension.toUpperCase(), size: file.size });
     setDetails({ title: '', category: '', date: '' });
     setAnalysis('none');
     setFileError('');
   };
   const removeFile = () => {
+    abortRef.current?.abort();
+    setLoading(false);
+    setFile(null);
+    setResult(null);
+    setReportError('');
     setSelected(null);
     setDetails({ title: '', category: '', date: '' });
     setAnalysis('none');
@@ -77,12 +96,36 @@ export function ReportPage({ onBack }: { onBack: () => void }) {
   const understand = () => {
     if (!selected) return;
     if (selected.kind === 'user') {
-      setAnalysis('unavailable');
+      if (file) analyseFile(file);
+      else if (result) setAnalysis('user');
       return;
     }
     setAnalysis('demo');
-    setHistory(previous => previous.some(report => report.title === (details.title || 'Fictional CBC Wellness Panel')) ? previous : [...previous, { id: Date.now(), title: details.title || 'Fictional CBC Wellness Panel', category: details.category || 'Complete Blood Count (CBC)', date: details.date }]);
+    setResult(null);
+    setQuestions(initialQuestions);
+    setHistory(previous => previous.some(report => report.kind === 'sample' && report.title === (details.title || 'Fictional CBC Wellness Panel')) ? previous : [...previous, { id: Date.now(), kind: 'sample', title: details.title || 'Fictional CBC Wellness Panel', category: details.category || 'Complete Blood Count (CBC)', date: details.date }]);
     requestAnimationFrame(() => document.getElementById('report-results')?.scrollIntoView({ behavior: 'smooth' }));
+  };
+  const analyseFile = async (target: File) => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    setLoading(true);
+    setReportError('');
+    setAnalysis('none');
+    try {
+      const response = await explainReport(target, { title: details.title, category: details.category }, abortRef.current.signal);
+      setResult(response);
+      setQuestions(response.questions?.length ? response.questions : initialQuestions);
+      setGlossarySearch('');
+      setAnalysis('user');
+      setHistory(previous => [...previous, { id: Date.now(), kind: 'user', title: details.title || response.filename || target.name, category: details.category, date: details.date, result: response, fileName: target.name, fileType: selected?.type, fileSize: target.size }]);
+      requestAnimationFrame(() => document.getElementById('report-results')?.scrollIntoView({ behavior: 'smooth' }));
+    } catch (caught) {
+      if ((caught as Error).name === 'AbortError') return;
+      setReportError(`${(caught as Error).message || 'The report could not be analysed.'} Please check that the InSync service is running, or try a different file.`);
+    } finally {
+      setLoading(false);
+    }
   };
   const copyQuestions = async () => {
     try {
@@ -92,12 +135,15 @@ export function ReportPage({ onBack }: { onBack: () => void }) {
       setCopyMessage('Copy is unavailable in this browser. You can select the questions manually.');
     }
   };
-  const filteredGlossary = glossary.filter(item => `${item.term} ${item.explanation}`.toLowerCase().includes(glossarySearch.toLowerCase()));
+  const isUser = analysis === 'user' && !!result;
+  const viewTests: ViewTest[] = isUser ? result!.tests.map(test => ({ ...test, status: statusLabels[test.status] ?? statusLabels.unknown, tone: statusLabels[test.status] ? test.status : 'unknown' })) : sampleTests;
+  const viewGlossary: ViewTerm[] = isUser ? result!.glossary : glossary;
+  const filteredGlossary = viewGlossary.filter(item => `${item.term} ${item.explanation}`.toLowerCase().includes(glossarySearch.toLowerCase()));
 
   return <section className="lab-page">
     <header className="lab-hero">
       <Button kind="text" onClick={onBack}>← Back</Button>
-      <div className="lab-title-row"><div><span className="eyebrow">LAB REPORT SIMPLIFIER</span><h1>Understand Your <em>Lab Reports.</em></h1><p className="lab-subtitle">Medical reports can feel complicated. Turn your test results into clear, easy-to-understand information.</p><p>Upload a report to explore what the terms mean, understand the reference ranges, and prepare questions for your next appointment.</p></div><div className="privacy-seal"><span aria-hidden="true">i</span><strong>Private by design</strong><p>Your health information is personal. This prototype does not send your files to a server or provide a clinical diagnosis.</p></div></div>
+      <div className="lab-title-row"><div><span className="eyebrow">LAB REPORT SIMPLIFIER</span><h1>Understand Your <em>Lab Reports.</em></h1><p className="lab-subtitle">Medical reports can feel complicated. Turn your test results into clear, easy-to-understand information.</p><p>Upload a report to explore what the terms mean, understand the reference ranges, and prepare questions for your next appointment.</p></div><div className="privacy-seal"><span aria-hidden="true">i</span><strong>Private by design</strong><p>Your health information is personal. Files you upload are sent only to the InSync service running locally on your machine for analysis. Sample reports stay in your browser. InSync does not provide a clinical diagnosis.</p></div></div>
     </header>
 
     <section className="lab-section upload-section">
@@ -107,36 +153,37 @@ export function ReportPage({ onBack }: { onBack: () => void }) {
         {!selected ? <><h3>Drop your report here</h3><p>PDF, JPG, JPEG, or PNG · Maximum 10 MB</p><input ref={inputRef} id="lab-file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={event => validateFile(event.target.files?.[0])} /><label className="btn primary" htmlFor="lab-file">Browse Files</label><button className="sample-report-button" onClick={loadSample}>Try a Sample Report</button></> : <div className="selected-report"><div><span>{selected.kind === 'sample' ? 'Fictional sample selected' : 'File ready on this device'}</span><strong>{selected.name}</strong><small>{selected.type} · {formatFileSize(selected.size)}</small></div><button onClick={removeFile}>Remove File</button></div>}
       </div>
       {fileError && <div className="lab-error" role="alert">{fileError}</div>}
-      <p className="upload-caveat">Selecting a file does not read or analyse its contents. Nothing is uploaded or sent to another service.</p>
+      <p className="upload-caveat">Selecting a file does not send it anywhere. When you choose Understand My Report, the file is sent to the InSync service running on your own machine, which reads it with a local AI model. Sample reports are never uploaded.</p>
     </section>
 
     {selected && <section className="lab-section report-details">
       <div className="lab-section-heading"><span className="eyebrow">OPTIONAL CONTEXT</span><h2>Report details</h2><p>Add details to organise this report. You can leave every field blank.</p></div>
       <div className="report-detail-grid"><label>Report title <span>Optional</span><input value={details.title} onChange={event => setDetails({ ...details, title: event.target.value })} placeholder="e.g. Annual blood tests" /></label><label>Test category <span>Optional</span><select value={details.category} onChange={event => setDetails({ ...details, category: event.target.value })}><option value="">Select a category</option>{categories.map(category => <option key={category}>{category}</option>)}</select></label><label>Report date <span>Optional</span><input type="date" value={details.date} onChange={event => setDetails({ ...details, date: event.target.value })} /></label></div>
-      <div className="understand-action"><Button onClick={understand}>Understand My Report →</Button><small>{selected.kind === 'sample' ? 'Opens a fictional demonstration analysis.' : 'Your file will remain local; automated extraction is not connected.'}</small></div>
-      {analysis === 'unavailable' && <div className="integration-notice" role="status"><span aria-hidden="true">i</span><div><strong>Automated analysis is not connected in this prototype.</strong><p>Your selected file has not been read. Secure text extraction and summarisation would require a future document-processing integration. Try the fictional sample report to explore the interface without using personal health information.</p><Button kind="outline" onClick={loadSample}>Try a Sample Report</Button></div></div>}
+      <div className="understand-action"><Button onClick={understand} disabled={loading}>{loading ? 'Analysing…' : 'Understand My Report →'}</Button><small>{selected.kind === 'sample' ? 'Opens a fictional demonstration analysis.' : 'Sends your file to the InSync service on this machine. This can take 30 to 90 seconds.'}</small></div>
+      {loading && <div className="integration-notice" role="status"><span aria-hidden="true">i</span><div><strong>Reading your report…</strong><p>The local InSync service is analysing your file. This can take 30 to 90 seconds. Please keep this page open.</p></div></div>}
+      {reportError && <div className="lab-error" role="alert">{reportError}</div>}
     </section>}
 
-    {analysis === 'demo' && <div id="report-results">
+    {(analysis === 'demo' || isUser) && <div id="report-results">
       <section className="lab-section report-overview">
-        <div><span className="sample-badge">Sample Analysis · Fictional</span><h2>Your Report, Simplified</h2><p>This fictional sample contains several blood test measurements. Each measurement is compared with the laboratory’s supplied reference range. Results outside a range do not automatically mean that something is wrong, and results inside a range do not describe overall health.</p></div><dl><div><dt>Report</dt><dd>{details.title || 'Fictional CBC Wellness Panel'}</dd></div><div><dt>Category</dt><dd>{details.category || 'Complete Blood Count (CBC)'}</dd></div>{details.date && <div><dt>Report date</dt><dd>{new Date(`${details.date}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}</dd></div>}</dl>
+        <div><span className="sample-badge">{isUser ? 'AI-generated · verify with your clinician' : 'Sample Analysis · Fictional'}</span><h2>Your Report, Simplified</h2>{isUser ? <RichText text={result!.summary} /> : <p>This fictional sample contains several blood test measurements. Each measurement is compared with the laboratory’s supplied reference range. Results outside a range do not automatically mean that something is wrong, and results inside a range do not describe overall health.</p>}</div><dl><div><dt>Report</dt><dd>{details.title || (isUser ? result!.filename : 'Fictional CBC Wellness Panel')}</dd></div>{(isUser ? details.category : (details.category || 'Complete Blood Count (CBC)')) && <div><dt>Category</dt><dd>{isUser ? details.category : (details.category || 'Complete Blood Count (CBC)')}</dd></div>}{details.date && <div><dt>Report date</dt><dd>{new Date(`${details.date}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}</dd></div>}</dl>
       </section>
 
       <section className="lab-section">
-        <div className="lab-section-heading"><span className="eyebrow">FICTIONAL SAMPLE DATA</span><h2>Your Results, Explained</h2><p>Statuses compare only with the reference range printed in this fictional sample.</p></div>
-        <div className="test-results">{sampleTests.map(test => <article key={test.name}><div className="test-card-head"><div><span>Test measurement</span><h3>{test.name}</h3></div><span className={`range-status ${test.tone}`}>{test.status}</span></div><div className="test-numbers"><div><span>Reported result</span><strong>{test.result} <small>{test.unit}</small></strong></div><div><span>Laboratory reference range</span><strong>{test.range || 'Reference range unavailable'}</strong></div></div><p>{test.measures}</p><div className="plain-meaning"><strong>In simple language</strong><p>{test.meaning}</p></div><details><summary>Learn More</summary><dl><div><dt>What it measures</dt><dd>{test.measures}</dd></div><div><dt>Why it may be ordered</dt><dd>{test.ordered}</dd></div><div><dt>What can affect it</dt><dd>{test.factors}</dd></div><div><dt>What it cannot tell you alone</dt><dd>{test.limits}</dd></div></dl></details></article>)}</div>
+        <div className="lab-section-heading"><span className="eyebrow">{isUser ? 'AI-GENERATED · VERIFY WITH YOUR CLINICIAN' : 'FICTIONAL SAMPLE DATA'}</span><h2>Your Results, Explained</h2><p>{isUser ? 'Statuses compare only with the reference range printed on your report. Automated reading can make mistakes, so please check values against the original.' : 'Statuses compare only with the reference range printed in this fictional sample.'}</p></div>
+        <div className="test-results">{viewTests.map(test => <article key={test.name}><div className="test-card-head"><div><span>Test measurement</span><h3>{test.name}</h3></div><span className={`range-status ${test.tone}`}>{test.status}</span></div><div className="test-numbers"><div><span>Reported result</span><strong>{test.result} <small>{test.unit}</small></strong></div><div><span>Laboratory reference range</span><strong>{test.range || 'Reference range unavailable'}</strong></div></div>{test.measures && <p>{test.measures}</p>}<div className="plain-meaning"><strong>In simple language</strong><p>{test.meaning}</p></div>{test.measures && <details><summary>Learn More</summary><dl><div><dt>What it measures</dt><dd>{test.measures}</dd></div><div><dt>Why it may be ordered</dt><dd>{test.ordered}</dd></div><div><dt>What can affect it</dt><dd>{test.factors}</dd></div><div><dt>What it cannot tell you alone</dt><dd>{test.limits}</dd></div></dl></details>}</article>)}{!viewTests.length && <p>No individual test results were found in this file.</p>}</div>
       </section>
 
       <section className="lab-section terminology-section">
-        <div className="lab-section-heading"><span className="eyebrow">PLAIN LANGUAGE</span><h2>Medical Terms, in Simple Language</h2><p>Search the fictional sample glossary or expand an entry for context.</p></div>
+        <div className="lab-section-heading"><span className="eyebrow">PLAIN LANGUAGE</span><h2>Medical Terms, in Simple Language</h2><p>{isUser ? 'Search the terms found in your report or expand an entry for more.' : 'Search the fictional sample glossary or expand an entry for context.'}</p></div>
         <label className="glossary-search">Search the Medical Jargon Glossary<input value={glossarySearch} onChange={event => setGlossarySearch(event.target.value)} placeholder="Search terms such as MCV or ferritin" /></label>
-        <div className="glossary-list">{filteredGlossary.map(item => <details key={item.term}><summary><strong>{item.term}</strong><span>{item.explanation}</span></summary><p>{item.context}</p></details>)}{!filteredGlossary.length && <div className="glossary-empty">No glossary terms match that search.</div>}</div>
+        <div className="glossary-list">{filteredGlossary.map(item => <details key={item.term}><summary><strong>{item.term}</strong><span>{item.explanation}</span></summary>{item.context && <p>{item.context}</p>}</details>)}{!filteredGlossary.length && <div className="glossary-empty">No glossary terms match that search.</div>}</div>
       </section>
 
-      <section className="lab-section takeaways-section">
+      {!isUser && <section className="lab-section takeaways-section">
         <div className="lab-section-heading"><span className="eyebrow">EDUCATIONAL SUMMARY</span><h2>Key Takeaways</h2></div>
         <div className="takeaway-grid"><article><span>2</span><div><strong>Within supplied ranges</strong><p>White Blood Cell Count and MCV fall within the ranges printed in this fictional report.</p></div></article><article><span>2</span><div><strong>Outside supplied ranges</strong><p>Haemoglobin is below and Platelet Count is above the fictional laboratory ranges. This does not identify a cause.</p></div></article><article><span>1</span><div><strong>Cannot be classified</strong><p>Ferritin has no reference range in the sample, so its value is not classified.</p></div></article><article><span>i</span><div><strong>Context still matters</strong><p>Reference ranges can vary by laboratory, age, pregnancy status, test method, and clinical context.</p></div></article></div>
-      </section>
+      </section>}
 
       <section className="lab-section questions-section">
         <div className="lab-section-heading"><div><span className="eyebrow">PREPARE FOR CARE</span><h2>Questions for Your Next Appointment</h2><p>Edit these suggestions or add your own. InSync does not recommend medication changes or treatment.</p></div><Button kind="outline" onClick={copyQuestions}>Copy Questions</Button></div>
@@ -144,14 +191,19 @@ export function ReportPage({ onBack }: { onBack: () => void }) {
         <div className="question-editor">{questions.map((question, index) => <div key={index}><span>{String(index + 1).padStart(2, '0')}</span><input aria-label={`Question ${index + 1}`} value={question} onChange={event => setQuestions(previous => previous.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /><button onClick={() => setQuestions(previous => previous.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove question ${index + 1}`}>Remove</button></div>)}</div>
         <form className="add-question" onSubmit={event => { event.preventDefault(); if (newQuestion.trim()) { setQuestions(previous => [...previous, newQuestion.trim()]); setNewQuestion(''); } }}><label>Add your own question<input value={newQuestion} onChange={event => setNewQuestion(event.target.value)} placeholder="What would you like to ask?" /></label><Button type="submit">Add Question</Button></form>
       </section>
+
+      {isUser && result!.source_id && <section className="lab-section report-followup">
+        <div className="lab-section-heading"><span className="eyebrow">FOLLOW UP</span><h2>Ask a follow-up about this report</h2><p>Questions are answered using this report. Answers are AI-generated, so please verify them with your clinician.</p></div>
+        <ChatPanel compact sourceId={result!.source_id} placeholder="e.g. What could a low haemoglobin value relate to?" starters={['Which results should I raise with my clinician?', 'Explain my results in simpler words']} />
+      </section>}
     </div>}
 
     <section className="lab-section reports-history">
-      <div className="lab-section-heading"><div><span className="eyebrow">THIS SESSION ONLY</span><h2>My Reports</h2><p>Only fictional demo reports opened during this session appear here. No documents are stored permanently.</p></div></div>
-      {!history.length ? <div className="lab-empty"><FileIcon /><h3>No demo reports opened yet.</h3><p>Try the fictional sample report to see how a simplified report could be organised.</p><Button kind="outline" onClick={loadSample}>Try a Sample Report</Button></div> : <div className="report-history-list">{history.map(report => <article key={report.id}><div><span className="sample-badge">Demo</span><h3>{report.title}</h3><p>{report.category}{report.date ? ` · ${formatDate(report.date)}` : ''}</p></div><div><button onClick={() => { setSelected({ kind: 'sample', name: 'fictional-cbc-sample.pdf', type: 'PDF · Fictional demo', size: 428000 }); setDetails({ title: report.title, category: report.category, date: report.date }); setAnalysis('demo'); requestAnimationFrame(() => document.getElementById('report-results')?.scrollIntoView({ behavior: 'smooth' })); }}>View Summary</button><button className="danger" onClick={() => setHistory(previous => previous.filter(item => item.id !== report.id))}>Remove</button></div></article>)}</div>}
+      <div className="lab-section-heading"><div><span className="eyebrow">THIS SESSION ONLY</span><h2>My Reports</h2><p>Reports opened during this session appear here, including any you analysed. InSync does not keep a permanent list of your reports.</p></div></div>
+      {!history.length ? <div className="lab-empty"><FileIcon /><h3>No reports opened yet.</h3><p>Upload a report, or try the fictional sample, to see how a simplified report could be organised.</p><Button kind="outline" onClick={loadSample}>Try a Sample Report</Button></div> : <div className="report-history-list">{history.map(report => <article key={report.id}><div><span className="sample-badge">{report.kind === 'user' ? 'AI-generated' : 'Demo'}</span><h3>{report.title}</h3><p>{report.category}{report.date ? ` · ${formatDate(report.date)}` : ''}</p></div><div><button onClick={() => { if (report.kind === 'user' && report.result) { setFile(null); setSelected({ kind: 'user', name: report.fileName ?? report.result.filename, type: report.fileType ?? 'File', size: report.fileSize ?? 0 }); setResult(report.result); setQuestions(report.result.questions?.length ? report.result.questions : initialQuestions); setAnalysis('user'); } else { setSelected({ kind: 'sample', name: 'fictional-cbc-sample.pdf', type: 'PDF · Fictional demo', size: 428000 }); setResult(null); setQuestions(initialQuestions); setAnalysis('demo'); } setDetails({ title: report.title, category: report.category, date: report.date }); requestAnimationFrame(() => document.getElementById('report-results')?.scrollIntoView({ behavior: 'smooth' })); }}>View Summary</button><button className="danger" onClick={() => setHistory(previous => previous.filter(item => item.id !== report.id))}>Remove</button></div></article>)}</div>}
     </section>
 
-    <section className="lab-safety"><span aria-hidden="true">i</span><div><h2>Important medical and privacy information</h2><p>This educational demonstration does not diagnose conditions, interpret real uploaded files, recommend treatment, or replace a qualified healthcare professional. A result inside or outside a reference range needs clinical context. Discuss uncertain or concerning findings with a healthcare professional.</p></div></section>
+    <section className="lab-safety"><span aria-hidden="true">i</span><div><h2>Important medical and privacy information</h2><p>InSync is educational. Explanations of uploaded reports are generated by an AI model, can contain errors, and should be checked against your original report. InSync does not diagnose conditions, recommend treatment, or replace a qualified healthcare professional. A result inside or outside a reference range needs clinical context. Discuss uncertain or concerning findings with a healthcare professional.</p></div></section>
   </section>;
 }
 
