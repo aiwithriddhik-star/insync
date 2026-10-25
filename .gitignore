@@ -1,2 +1,4 @@
 .serena/
 .obsidian/
+# Secrets
+.env
