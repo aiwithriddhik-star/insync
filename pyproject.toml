@@ -1,7 +1,7 @@
 [project]
 name = "research-womens-safety"
 version = "0.1.0"
-description = "Add your description here"
+description = "InSync: a local-first women's health companion with cycle tracking, PCOS risk estimation, lab report simplification and research-grounded RAG chat"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
