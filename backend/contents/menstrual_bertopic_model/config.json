@@ -1,0 +1,72 @@
+{
+  "calculate_probabilities": false,
+  "language": null,
+  "low_memory": false,
+  "min_topic_size": 8,
+  "n_gram_range": [
+    1,
+    1
+  ],
+  "nr_topics": null,
+  "seed_topic_list": [
+    [
+      "dysmenorrhea",
+      "menorrhagia",
+      "heavy menstrual bleeding",
+      "irregular cycles",
+      "oligomenorrhea",
+      "amenorrhea"
+    ],
+    [
+      "pcos",
+      "polycystic ovary",
+      "hormonal",
+      "thyroid",
+      "anemia",
+      "endometriosis",
+      "premenstrual syndrome"
+    ],
+    [
+      "bmi",
+      "obesity",
+      "diet",
+      "junk food",
+      "physical activity",
+      "sleep",
+      "age at menarche"
+    ],
+    [
+      "stress",
+      "anxiety",
+      "depression",
+      "education",
+      "socioeconomic",
+      "rural urban",
+      "family history"
+    ],
+    [
+      "health seeking",
+      "treatment",
+      "self medication",
+      "consultation",
+      "gynecologist",
+      "ayurveda",
+      "home remedies"
+    ],
+    [
+      "stigma",
+      "awareness",
+      "taboo",
+      "hygiene",
+      "sanitary",
+      "cost",
+      "barriers",
+      "healthcare access"
+    ]
+  ],
+  "top_n_words": 30,
+  "verbose": false,
+  "zeroshot_min_similarity": 0.7,
+  "zeroshot_topic_list": null,
+  "embedding_model": "pritamdeka/S-Scibert-snli-multinli-stsb"
+}
