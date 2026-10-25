@@ -1,5 +1,0 @@
-fastapi
-uvicorn
-bertopic
-sentence-transformers
-wordcloud

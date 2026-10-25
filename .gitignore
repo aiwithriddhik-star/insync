@@ -1,11 +1,13 @@
-.serena/
-.obsidian/
+
 # Local runtime data
 backend/chroma_db/
 backend/uploads/
 
 # Secrets
 .env
+
+# Python dependencies
+uv.lock
 
 # Python bytecode
 __pycache__/
