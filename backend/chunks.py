@@ -128,14 +128,18 @@ def index_pdf_for_rag(
 
 
 def search_documents(query: str, n_results: int = 5, source_id: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Semantic search over all indexed PDFs (or one PDF when source_id is given)."""
+    """Semantic search over all indexed PDFs (or one PDF when source_id is given).
+
+    Each hit has "text", "meta" and "distance" (Chroma distance; lower = more similar).
+    """
     where = {"source_id": source_id} if source_id else None
     res = get_collection().query(
         query_embeddings=[get_embeddings().embed_query(query)],
         n_results=n_results,
         where=where,
+        include=["documents", "metadatas", "distances"],
     )
     return [
-        {"text": d, "meta": m}
-        for d, m in zip(res["documents"][0], res["metadatas"][0])
+        {"text": d, "meta": m, "distance": dist}
+        for d, m, dist in zip(res["documents"][0], res["metadatas"][0], res["distances"][0])
     ]

@@ -16,9 +16,10 @@ load_dotenv()
 CHROMA_DIR = os.getenv("CHROMA_DIR", str(Path(__file__).resolve().parent / "chroma_db"))
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "documents")
 
+# "lmstudio"              -> LM Studio /v1/embeddings (same local server as the chat model)
 # "ollama"                -> langchain OllamaEmbeddings (needs a running Ollama server)
 # "sentence_transformers" -> local HuggingFace model through langchain-huggingface
-EMBEDDING_BACKEND = os.getenv("EMBEDDING_BACKEND", "ollama")
+EMBEDDING_BACKEND = os.getenv("EMBEDDING_BACKEND", "lmstudio")
 OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 ST_EMBED_MODEL = os.getenv("ST_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
@@ -27,18 +28,24 @@ _client = None
 
 
 def embedding_tag() -> str:
+    if EMBEDDING_BACKEND == "lmstudio":
+        from llm import LMSTUDIO_EMBED_MODEL
+        return f"lmstudio:{LMSTUDIO_EMBED_MODEL}"
     if EMBEDDING_BACKEND == "ollama":
         return f"ollama:{OLLAMA_EMBED_MODEL}"
     if EMBEDDING_BACKEND == "sentence_transformers":
         return f"sentence_transformers:{ST_EMBED_MODEL}"
-    raise ValueError(f"Unknown EMBEDDING_BACKEND '{EMBEDDING_BACKEND}' (use 'ollama' or 'sentence_transformers')")
+    raise ValueError(f"Unknown EMBEDDING_BACKEND '{EMBEDDING_BACKEND}' (use 'lmstudio', 'ollama' or 'sentence_transformers')")
 
 
 def get_embeddings():
     global _embeddings
     if _embeddings is None:
         embedding_tag()   # validates the backend name
-        if EMBEDDING_BACKEND == "ollama":
+        if EMBEDDING_BACKEND == "lmstudio":
+            from llm import LMStudioEmbeddings
+            _embeddings = LMStudioEmbeddings()
+        elif EMBEDDING_BACKEND == "ollama":
             from langchain_ollama import OllamaEmbeddings
             _embeddings = OllamaEmbeddings(model=OLLAMA_EMBED_MODEL)
         else:
