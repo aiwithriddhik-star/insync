@@ -1,4 +1,4 @@
-## InSync
+# InSync
 ## Menstrual Health, Beyond the Calendar.
 
 **An intelligent, accessible menstrual health companion that goes beyond cycle tracking to support symptom awareness, medical understanding, and everyday health management.**
