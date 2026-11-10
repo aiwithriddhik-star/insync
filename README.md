@@ -294,7 +294,7 @@ These are planned extensions, not claims of already implemented functionality.
 - **Not a medical device.** All outputs are educational. The chat and report prompts forbid diagnosis and treatment advice, and the UI repeats this on every health page.
 - **PCOS model scope.** The model was trained on one small public dataset and validated on a single 20% holdout, with **no external validation**. Its probabilities may not generalise to other populations.
 - **Report simplifier.** It judges values only against the reference range printed on the report. Vision OCR from a 4B model can misread values, so always check them against the original.
-- **Privacy.** All inference runs locally through LM Studio. Uploaded files are stored under `backend/uploads/` and indexed in `backend/chroma_db/`; both are git-ignored.
+- **Privacy.** All inference runs locally through LM Studio. Uploaded files are stored under `backend/uploads/` and indexed in `backend/chroma_db/`; both are git-ignored,
 
 ---
 
